@@ -60,6 +60,24 @@ public class PersonController {
 		PagedResources<?> resources = assembler.toResource(persons);
 		return new ResponseEntity<>(resources, HttpStatus.OK);
 	}
+	
+	@GetMapping(value = "/findPersonByName/{firstName}", produces = { "application/json", "application/xml", "application/x-yaml" })
+	public ResponseEntity<?> findPersonByName(@PathVariable("firstName") String firstName,
+			@RequestParam(value = "page", defaultValue = "0") int page,
+			@RequestParam(value = "limit", defaultValue = "12") int limit,
+			@RequestParam(value = "direction", defaultValue = "asc") String direction) {
+		
+		var sortDirection = "desc".equalsIgnoreCase(direction) ? Direction.DESC : Direction.ASC;
+		
+		Pageable pageable = PageRequest.of(page, limit, Sort.by(sortDirection, "firstName"));
+		
+		Page<PersonVO> persons = service.findPersonByName(firstName, pageable);
+		persons.forEach(
+				person -> person.add(linkTo(methodOn(PersonController.class).findById(person.getKey())).withSelfRel()));
+		
+		PagedResources<?> resources = assembler.toResource(persons);
+		return new ResponseEntity<>(resources, HttpStatus.OK);
+	}
 
 	@PostMapping(produces = { "application/json", "application/xml", "application/x-yaml" }, consumes = {
 			"application/json", "application/xml", "application/x-yaml" })
